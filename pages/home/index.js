@@ -1,7 +1,10 @@
-import { getAuth, updateDoc, updateProfile } from '../../lib/firebase.js';
+import {
+  collection, getAuth, updateDoc, updateProfile,
+} from '../../lib/firebase.js';
 import {
   templatePost, createPost, getPosts, editPosts,
 } from '../../lib/services.js';
+import { postErrors } from '../../validation/index.js';
 
 const auth = getAuth();
 export default () => {
@@ -19,12 +22,10 @@ export default () => {
     </section>
     <section class="post">
      <form id="formPost">
-     <input type="textarea" class="inputPost" id="inputPost" contenteditable="true" placeholder="Escreva aqui"> </input>
-      <button type="button" class="edit-button" id="editPost">Editar</button>
-      <button type="button" class="delete-button">Excluir</button>
-      <button type="submit" class="save-button" id="btnPost">Salvar</button>
+        <input type="textarea" class="inputPost" id="inputPost" placeholder="Escreva aqui"> </input>
+        <button type="submit" class"btn subimitPost" id="btnPost">Enviar</btn>
+        <p class="post-error"></p>
      </form>
-     <hr>
     </section>
     <article class="feed" id="printPost">
     </article>
@@ -37,17 +38,38 @@ export default () => {
   const btnPost = containerHome.querySelector('#btnPost');
   const textPost = containerHome.querySelector('#inputPost');
   const printPost = containerHome.querySelector('#printPost');
+  const postError = containerHome.querySelector('#post-error');
+
+  function createTemplate(name, date, text, id) {
+    const template = document.createElement('div');
+    template.className = 'contentPost';
+    template.innerHTML = `<hr>
+    <p>${name}</p>
+    <p>${date}</p>
+    <textarea class="text-post" id="textPost" disabled data-post-id="${id}">${text}</textarea>
+    <p class="post-error"></p>
+    <button type="button" class="edit-button" id="editPost" data-edit-id="${id}">Editar</button>
+    <button type="button" class="save-button" id="save-button" data-save-id="${id}">Salvar</button>
+    <button type="button" class="delete-button" id="delete-button" data-delete-id="${id}">Excluir</button>
+    <hr>
+      `;
+
+    return template.innerHTML;
+  }
 
   const postCreation = (event) => {
     event.preventDefault();
+    const text = textPost.value;
     // pensar em type error pra texto vazio
-    const template = textPost.value;
-    createPost(templatePost(template))
-      .then(() => {
-        printPost.innerHTML += template;
+    const post = templatePost(text);
+    createPost(post)
+      .then((docRef) => {
+        const newPost = createTemplate(post.name, post.date, post.text, docRef.id);
+        printPost.innerHTML += newPost;
       })
       .catch((error) => {
-        alert(`${error}Algo deu errado, tente novamente.`);
+        // const errorCode = error.code;
+        // postErrors(text, postError, errorCode);
       });
   };
 
@@ -57,41 +79,32 @@ export default () => {
     printPost.innerHTML = '';
     result.forEach((doc) => {
       const data = doc.data();
-      const div = document.createElement('div');
-      div.className = 'contentPost';
-      div.innerHTML = `<hr>
-        <p>${data.name}</p>
-        <p>${data.date}</p>
-        <p class="text-post" id="textPost" contenteditable="false">${data.text}</p>
-        <button type="button" class="edit-button" id="editPost" data-edit="${doc.id}">Editar</button>
-        <button type="button" class="delete-button">Excluir</button>
-        <button type="submit" class"save-button" id="btnPost">Salvar</btn>
-        <button type="button" class="like">&#9829</button>
-        <hr>
-        `;
+      createTemplate(data.name, data.date, data.text, doc.id);
       // elementopai.insertBefore (elemento novo, elemento de referência.childNodes[posição])
-      printPost.insertBefore(div, printPost.childNodes[0]);
-      const editButton = div.querySelector('#editPost');
-      // editButton.style.display = 'none';
-      const editText = containerHome.querySelector('#textPost');
-      const editId = editButton.getAttribute('data-edit');
-      // console.log(editText);
-
-      // editPosts(textPost.value, doc.id).then(() => document.location.reload());
-      // const showButtons = () => {
-      //   if (doc.id === auth.currentUser.uid) {
-      //     editButton.style.display = 'block';
-      //   }
-      // };
-      const postEdit = () => {
-        editPosts(editText.value, editId)
-          .then(() => {
-              console.log('oi');
-           // document.location.reload();
-          });
-      };
-      editButton.addEventListener('click', postEdit);
+      printPost.innerHTML += createTemplate(data.name, data.date, data.text, doc.id);
     });
   });
+
+  // Editando os posts
+  const editButtons = containerHome.querySelectorAll('#editPost');
+  editButtons.forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      const postEdit = e.currentTarget.dataset.editId;
+      const saveEdit = containerHome.querySelector(`[data-save-id=${postEdit}]`);
+      const textEdit = containerHome.querySelector(`[data-post-id=${postEdit}]`);
+      const editButton = containerHome.querySelector(`[data-edit-id=${postEdit}]`);
+      const btnDelete = containerHome.querySelector(`[data-delete-id=${postEdit}]`);
+
+      textEdit.removeAttribute('disabled');
+      editButton.classList.add('hide');
+      btnDelete.classList.add('hide');
+
+      saveEdit.addEventListener('click', async () => {
+        await editPosts(postEdit, textEdit.value);
+        textEdit.setAttribute('false');
+      });
+    });
+  });
+
   return containerHome;
 };
