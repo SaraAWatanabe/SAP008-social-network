@@ -1,15 +1,14 @@
 import {
-  collection, getAuth, updateDoc, updateProfile,
+  getAuth,
 } from '../../lib/firebase.js';
 import {
-  templatePost, createPost, getPosts, editPosts,
+  templatePost, createPost, getPosts, editPosts, deletePost,
 } from '../../lib/services.js';
 import { postErrors } from '../../validation/index.js';
 
 const auth = getAuth();
 export default () => {
   const containerHome = document.createElement('div');
-
   // TROCAR CLASSES TAGS ESTILOS CSS
   const home = `
     <header>
@@ -27,7 +26,7 @@ export default () => {
         <p class="post-error"></p>
      </form>
     </section>
-    <article class="feed" id="printPost">
+    <article class="feed" data-new-post id="printPost">
     </article>
     <footer>
     </footer>
@@ -40,17 +39,21 @@ export default () => {
   const printPost = containerHome.querySelector('#printPost');
   const postError = containerHome.querySelector('#post-error');
 
-  function createTemplate(name, date, text, id) {
+  function createTemplate(name, date, text, postId, userId) {
     const template = document.createElement('div');
+    template.dataset.postId = postId;
+    console.log(template);
     template.className = 'contentPost';
+    const isUserPost = auth.currentUser.uid === userId;
     template.innerHTML = `<hr>
     <p>${name}</p>
     <p>${date}</p>
-    <textarea class="text-post" id="textPost" disabled data-post-id="${id}">${text}</textarea>
+    <textarea class="text-post" id="textPost" data-text-id="${postId}" disabled>${text}</textarea>
     <p class="post-error"></p>
-    <button type="button" class="edit-button" id="editPost" data-edit-id="${id}">Editar</button>
-    <button type="button" class="save-button" id="save-button" data-save-id="${id}">Salvar</button>
-    <button type="button" class="delete-button" id="delete-button" data-delete-id="${id}">Excluir</button>
+    <button type="button" class="edit-button post ${isUserPost ? '' : 'hide'}" id="editPost" data-user-id="${userId}" data-edit-id="${postId}">Editar</button>
+    <button type="button" class="save-button post ${isUserPost ? '' : 'hide'}" id="save-button" data-post-id="${postId}">Salvar</button>
+    <button type="button" class="delete-button post ${isUserPost ? '' : 'hide'}" id="delete-button" data-delete-id="${postId}">Excluir</button>
+    <button type="button" class="like-button post" id="like-button" data-like-id="${postId}">&#128571</button>
     <hr>
       `;
 
@@ -64,7 +67,7 @@ export default () => {
     const post = templatePost(text);
     createPost(post)
       .then((docRef) => {
-        const newPost = createTemplate(post.name, post.date, post.text, docRef.id);
+        const newPost = createTemplate(post.name, post.date, post.text, docRef.id, post.userId);
         printPost.innerHTML += newPost;
       })
       .catch((error) => {
@@ -79,31 +82,41 @@ export default () => {
     printPost.innerHTML = '';
     result.forEach((doc) => {
       const data = doc.data();
-      createTemplate(data.name, data.date, data.text, doc.id);
+      createTemplate(data.name, data.date, data.text, doc.id, data.userId);
       // elementopai.insertBefore (elemento novo, elemento de referência.childNodes[posição])
-      printPost.innerHTML += createTemplate(data.name, data.date, data.text, doc.id);
+      printPost.innerHTML += createTemplate(data.name, data.date, data.text, doc.id, data.userId);
     });
   });
 
   // Editando os posts
-  const editButtons = containerHome.querySelectorAll('#editPost');
-  editButtons.forEach((btn) => {
-    btn.addEventListener('click', (e) => {
-      const postEdit = e.currentTarget.dataset.editId;
-      const saveEdit = containerHome.querySelector(`[data-save-id=${postEdit}]`);
-      const textEdit = containerHome.querySelector(`[data-post-id=${postEdit}]`);
-      const editButton = containerHome.querySelector(`[data-edit-id=${postEdit}]`);
-      const btnDelete = containerHome.querySelector(`[data-delete-id=${postEdit}]`);
+  const allPosts = containerHome.querySelector('[data-new-post]');
 
+  allPosts.addEventListener('click', (e) => {
+    const { target } = e;
+    const postId = target.dataset.editId;
+    if (postId) {
+      const textEdit = containerHome.querySelector(`[data-text-id="${postId}"]`);
+      const btnSave = containerHome.querySelector(`[data-post-id="${postId}"]`);
       textEdit.removeAttribute('disabled');
-      editButton.classList.add('hide');
-      btnDelete.classList.add('hide');
-
-      saveEdit.addEventListener('click', async () => {
-        await editPosts(postEdit, textEdit.value);
-        textEdit.setAttribute('false');
+      btnSave.addEventListener('click', async () => {
+        await editPosts(textEdit.value, postId);
+        textEdit.setAttribute('disabled', '');
       });
-    });
+    }
+  });
+
+  allPosts.addEventListener('click', (e) => {
+    const { target } = e;
+    const deleteId = target.dataset.deleteId;
+    console.log(deleteId);
+    if (deleteId) {
+      const btnDelete = containerHome.querySelector(`[data-delete-id="${deleteId}"]`);
+      // confirm edit entraria aqui
+      btnDelete.addEventListener('click', async () => {
+        await deletePost(deleteId);
+        // o post deve apagar em seguida
+      });
+    }
   });
 
   return containerHome;
