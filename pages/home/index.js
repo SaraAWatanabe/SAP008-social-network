@@ -7,8 +7,8 @@ import {
 import { navigateTo } from '../../navigation/navigate.js';
 import { postErrors } from '../../validation/index.js';
 
-const auth = getAuth();
 export default () => {
+  const auth = getAuth();
   const containerHome = document.createElement('div');
   const home = `
   <div class="home">
@@ -16,14 +16,14 @@ export default () => {
       <nav class="menu">
       Menu
       </nav>
-      <img class="home-logo" src="../img/homelogo.png">
+      <img class="home-logo" src="img/homelogo.png">
     </header>
     <section class="welcome">
     <p>Bem-vinde, <b>${auth.currentUser.displayName}</b></p>
     </section>
     <section class="post">
      <form id="formPost" class="form">
-        <img class="avatar" src="../img/avatarcat.png">
+        <img class="avatar" src="img/avatarcat.png">
         <textarea class="input-post" id="inputPost" placeholder="Escreva aqui 🐈"></textarea>
         <button type="submit" class="submit-post" id="btnPost">Enviar</btn>
         <p class="post-error"></p>
@@ -46,14 +46,14 @@ export default () => {
   function createTemplate(name, date, text, postId, userId) {
     const template = document.createElement('div');
     template.dataset.postId = postId;
-    template.className = 'contentPost';
+    template.className = 'content-post';
     const isUserPost = auth.currentUser.uid === userId;
     template.innerHTML = `
     <div class="content-post">
     <div class="post-header">
-      <img class="avatar" src="../img/avatarcat.png">
+      <img class="avatar" src="img/avatarcat.png">
       <div class="post-header-text>      
-        <text class="name">${name} </text>
+        <h2 class="name">${name} </h2>
         <p>${date}</p>
         <div class='container-btn'>
           <button type="button" class="post-btn ${isUserPost ? '' : 'hide'}" id="editPost" data-user-id="${userId}" data-edit-id="${postId}">Editar</button>
@@ -82,7 +82,6 @@ export default () => {
       .then((docRef) => {
         const newPost = createTemplate(post.name, post.date, post.text, docRef.id, post.userId);
         printPost.innerHTML += newPost;
-        // apagar a mensagem do input
       })
       .catch((error) => {
         // const errorCode = error.code;
@@ -118,18 +117,16 @@ export default () => {
     }
   });
 
-  allPosts.addEventListener('click', (e) => {
+  allPosts.addEventListener('click', async (e) => {
     const { target } = e;
     const deleteId = target.dataset.deleteId;
     console.log(deleteId);
     if (deleteId) {
-      const btnDelete = containerHome.querySelector(`[data-delete-id="${deleteId}"]`);
-      // confirm edit entraria aqui
-      btnDelete.addEventListener('click', async () => {
+      if (confirm('Tem certeza que quer excluir esse post?')) {
         await deletePost(deleteId);
-        navigateTo('#home');
-        // o post deve apagar em seguida
-      });
+        const postElement = target.parentNode.parentNode.parentNode.parentNode;
+        postElement.remove();
+      }
     }
   });
 
