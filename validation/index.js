@@ -23,7 +23,7 @@ export const loginErrors = (errorCode, loginError) => {
 
 export const validPass = (pass, password2, registerError) => {
   if (pass !== password2) {
-    registerError.innerHTML = 'As senhas não são iguais. Por favor, insira senhas válidas';
+    registerError.innerHTML = 'Senhas diferentes. Por favor, insira senhas válidas';
   }
 };
 

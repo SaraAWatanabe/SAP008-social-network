@@ -52,27 +52,29 @@ export default () => {
   const google = containerRegister.querySelector('#btn-entrar-google');
   const backToLogin = containerRegister.querySelector('#btn-back');
   const registerError = containerRegister.querySelector('#register-error');
-  const password2 = containerRegister.querySelector('#password-register1');
+  const password2 = containerRegister.querySelector('#password-register2');
   const newUser = (event) => {
     event.preventDefault();
-    signUp(email.value, pass.value, name.value)
-      .then((userCredential) => {
-        // Signed in
-        console.log(userCredential);
-        const user = userCredential.user;
-        updateProfile(user, {
-          displayName: name.value,
+    if (pass.value === password2.value) {
+      signUp(email.value, pass.value, name.value)
+        .then((userCredential) => {
+          const user = userCredential.user;
+          updateProfile(user, {
+            displayName: name.value,
+          })
+            .then(() => {
+              navigateTo('#home');
+            });
         })
-          .then(() => {
-            navigateTo('#home');
-          });
-      })
-      .catch((error) => {
-        const errorCode = error.code;
-        const errorMessage = error.message;
-        console.log(errorCode, ':', errorMessage);
-        registerErrors(errorCode, registerError);
-      });
+        .catch((error) => {
+          const errorCode = error.code;
+          const errorMessage = error.message;
+          console.log(errorCode, ':', errorMessage);
+          registerErrors(errorCode, registerError);
+        });
+    } else {
+      validPass(pass, password2, registerError);
+    }
   };
   const googleLogin = (event) => {
     event.preventDefault();
