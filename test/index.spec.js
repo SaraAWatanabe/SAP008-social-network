@@ -1,4 +1,3 @@
-// importamos la funcion que vamos a testear
 import { signInWithGoogle, signUp, logInWithEmailAndPassword } from '../src/lib/services.js';
 import { signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword } from '../src/lib/firebase.js';
 
@@ -11,7 +10,6 @@ describe('signInWithGoogle', () => {
   });
 });
 
-// display name tbm
 describe('signUp', () => {
   it('should be called once', () => {
     const email = 'admin@gmail.com';
