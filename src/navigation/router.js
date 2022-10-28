@@ -3,10 +3,8 @@ import cadastro from '../pages/cadastro/index.js';
 import home from '../pages/home/index.js';
 import criarperfil from '../pages/criarperfil/index.js';
 
-// UI
 const main = document.querySelector('#root');
 
-// roteador
 export const router = () => {
   main.innerHTML = '';
   switch (window.location.hash) {
@@ -24,6 +22,7 @@ export const router = () => {
       main.appendChild(criarperfil());
       break;
     default:
+      // eslint-disable-next-line no-alert
       alert('Page not found!');
   }
 };

@@ -1,4 +1,3 @@
-// Importar serviço, se houver.
 import { signUp, signInWithGoogle } from '../../lib/services.js';
 import { navigateTo } from '../../navigation/navigate.js';
 import { updateProfile, GoogleAuthProvider } from '../../lib/firebase.js';
